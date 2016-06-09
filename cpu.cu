@@ -16,7 +16,7 @@ int main(){
     print(memory, 40);
 
     // Calls rewrite sequentially until the computation is done
-    for (int k=0; k<clocks*3; ++k)
+    for (int k=0; k<clocks; ++k)
         for (int j=0; j<3; ++j) // for alternating alignments
             process(memory, memory_nodes, j);
 
