@@ -2,7 +2,10 @@
 
 - A "Node" is 4 ints (128 bits). 
 
-- "Memory" is an array of nodes.
+- "Memory" is an array of nodes. Example:
+
+        | NODE 0                | NODE 1                | NODE 2                | ...
+        | Int | Int | Int | Int | Int | Int | Int | Int | Int | Int | Int | Int | ...
 
 - The input is an initial Memory encoding a λ-term.
 
@@ -11,9 +14,6 @@
 - The output, i.e., the final Memory state, encodes the normal form of the λ-term.
 
 - The function `void rewrite(int *a, int *b, int *c)` takes 3 sequential nodes and rewrites them locally.
-
-        | NODE 0                | NODE 1                | NODE 2                | ...
-        | A.x | A.y | A.z | A.w | B.x | B.y | B.z | B.w | C.x | C.y | C.z | C.w | ...
 
 - Rewrites can be done in parallel. For example:
 
