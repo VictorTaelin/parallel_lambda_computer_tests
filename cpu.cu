@@ -8,14 +8,18 @@ void process(int *mem, int len, int j){
 };
 
 int main(){
+    // Loads initial input
     for (int i=0; i < memory_ints; ++i)
         memory[i] = i < program_nodes*4 ? program[i] : 0;
 
+    // Prints it for visualization
     print(memory, 40);
 
+    // Calls rewrite sequentially until the computation is done
     for (int k=0; k<clocks*3; ++k)
-        for (int j=0; j<3; ++j)
+        for (int j=0; j<3; ++j) // for alternating alignments
             process(memory, memory_nodes, j);
 
+    // Print the result (should have only 4 numbers)
     print(memory, 40);
 }
