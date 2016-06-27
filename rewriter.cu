@@ -16,66 +16,86 @@ __host__ __device__ void erase(int* a){
 
 // Rewrites 3 memory nodes based on interaction rules
 __host__ __device__ void rewrite(int* a, int* b, int* c){
+    int a0, a1, a2, a3,
+        b0, b1, b2, b3,
+        c0, c1, c2, c3,
+        tmp;
+
+    a0 = a[0], a1 = a[1], a2 = a[2], a3 = a[3];
+    b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+    c0 = c[0], c1 = c[1], c2 = c[2], c3 = c[3];
+
     // Full block
-    if (!(a[0] || b[0] || c[0]) || (a[0] && b[0] && c[0]))
+    if (!(a0 || b0 || c0) || (a0 && b0 && c0))
         return;
 
     // Move
-    if (!(a[0] || b[0]) || (a[0] && b[0]))
-        swap4(&b[0], &c[0]);
+    if (!(a0 || b0) || (a0 && b0))
+        tmp = b0, b0 = c0, c0 = tmp,
+        tmp = b1, b1 = c1, c1 = tmp,
+        tmp = b2, b2 = c2, c2 = tmp,
+        tmp = b3, b3 = c3, c3 = tmp;
 
     // Duplicate
-    if (a[0] < 0 && b[0] == 0)
-        swap(&a[1], &a[2]),
-        b[0] = -a[0], b[1] = a[3], a[0] *= -1,
-        b[2] = a[2] + (a[2]>0?2:-1),
-        a[3] = a[2] + (a[2]>0?1:-2),
-        b[3] = a[2] + (a[2]>0?3:-3);
+    if (a0 < 0 && b0 == 0)
+        tmp = a1, a1 = a2, a2 = tmp,
+        b0 = -a0, b1 = a3, a0 *= -1,
+        b2 = a2 + (a2>0?2:-1),
+        a3 = a2 + (a2>0?1:-2),
+        b3 = a2 + (a2>0?3:-3);
 
     // Nothing to do
-    if (!(a[0]>0 && !b[0] && c[0]>0))
-        return;
+    if ((a0>0 && !b0 && c0>0)){
 
-    // Passthrough
-    if (   (a[1] >  0 && c[1]  < 0)
-        || (a[1] >  0 && a[0] == 1)
-        || (c[0] == 1 && c[1]  < 0)){
-        swap4(a, c);
-        for (int i=1; i<=3; ++i)
-            a[i] *= a[i]==-c[1] || a[i]==-c[2] || a[i]==-c[3] ? -1 : 1;
-        for (int i=1; i<=3; ++i)
-            c[i] *= c[i]== a[1] || c[i]== a[2] || c[i]== a[3] ? -1 : 1;
-    };
-
-    // Substitute
-    for (int n=0; n<2; ++n){
-        int* x = n ? c : a;
-        int* y = n ? a : c;
-        for (int i=1; i<=3; ++i){
-            if (x[0] == 1 && x[1] == -y[i]){
-                y[i] = x[2];
-                erase(x);
-                if (y[2] == -y[3] && y[2] < 0)
-                    swap(&y[2], &y[3]);
-                if (y[1] == -y[2])
-                    erase(y);
-            };
+        // Passthrough
+        if (   (a1 >  0 && c1  < 0)
+            || (a1 >  0 && a0 == 1)
+            || (c0 == 1 && c1  < 0)){
+            tmp = a0, a0 = c0, c0 = tmp,
+            tmp = a1, a1 = c1, c1 = tmp,
+            tmp = a2, a2 = c2, c2 = tmp,
+            tmp = a3, a3 = c3, c3 = tmp;
+            a1 *= a1==-c1 || a1==-c2 || a1==-c3 ? -1 : 1;
+            a2 *= a2==-c1 || a2==-c2 || a2==-c3 ? -1 : 1;
+            a3 *= a3==-c1 || a3==-c2 || a3==-c3 ? -1 : 1;
+            c1 *= c1== a1 || c1== a2 || c1== a3 ? -1 : 1;
+            c2 *= c2== a1 || c2== a2 || c2== a3 ? -1 : 1;
+            c3 *= c3== a1 || c3== a2 || c3== a3 ? -1 : 1;
         };
-    };
 
-    // React
-    if (a[0] > 1 && c[0] > 1 && a[1] == -c[1]){
-        if (a[0] == c[0])
-            a[0] = 1, a[1] = a[2], a[2] = c[2],
-            c[0] = 1, c[1] = a[3], c[2] = c[3],
-            a[3] = 0, c[3] = 0;
-        else
-            swap(a, c),
-            a[0] *= -1,
-            c[0] *= -1,
-            a[1] = (a[1]*1103515245+12345)&0x7fffffff, // PRNG
-            c[1] = -a[1];
-    };
+        // Substitute
+        // TODO: clean this mess
+        if (c0 == 1 && c1 == -a1){ a1 = c2; c0=c1=c2=c3=0; if (a2 == -a3 && a2 < 0) tmp = a2, a2 = a3, a3 = tmp; if (a1 == -a2) a0=a1=a2=a3=0; };
+        if (c0 == 1 && c1 == -a2){ a2 = c2; c0=c1=c2=c3=0; if (a2 == -a3 && a2 < 0) tmp = a2, a2 = a3, a3 = tmp; if (a1 == -a2) a0=a1=a2=a3=0; };
+        if (c0 == 1 && c1 == -a3){ a3 = c2; c0=c1=c2=c3=0; if (a2 == -a3 && a2 < 0) tmp = a2, a2 = a3, a3 = tmp; if (a1 == -a2) a0=a1=a2=a3=0; };
+        if (a0 == 1 && a1 == -c1){ c1 = a2; a0=a1=a2=a3=0; if (c2 == -c3 && c2 < 0) tmp = c2, c2 = c3, c3 = tmp; if (c1 == -c2) c0=c1=c2=c3=0; };
+        if (a0 == 1 && a1 == -c2){ c2 = a2; a0=a1=a2=a3=0; if (c2 == -c3 && c2 < 0) tmp = c2, c2 = c3, c3 = tmp; if (c1 == -c2) c0=c1=c2=c3=0; };
+        if (a0 == 1 && a1 == -c3){ c3 = a2; a0=a1=a2=a3=0; if (c2 == -c3 && c2 < 0) tmp = c2, c2 = c3, c3 = tmp; if (c1 == -c2) c0=c1=c2=c3=0; };
+
+        // React
+        if (a0 > 1 && c0 > 1 && a1 == -c1){
+            if (a0 == c0)
+                a0 = 1, a1 = a2, a2 = c2,
+                c0 = 1, c1 = a3, c2 = c3,
+                a3 = 0, c3 = 0;
+            else
+                tmp = a0, a0 = c0, c0 = tmp,
+                a0 *= -1,
+                c0 *= -1,
+                a1 = (a1*1103515245+12345)&0x7fffffff, // PRNG
+                c1 = -a1;
+        };
+    }
+
+    a[0] = a0, a[1] = a1, a[2] = a2, a[3] = a3;
+    b[0] = b0, b[1] = b1, b[2] = b2, b[3] = b3;
+    c[0] = c0, c[1] = c1, c[2] = c2, c[3] = c3;
+};
+
+__host__ __device__ void tick(int *mem, int total_nodes){
+    for (int j=0; j<3; ++j)
+        for (int i=j; i<total_nodes-2; i+=3)
+            rewrite(mem+i*4, mem+i*4+4, mem+i*4+8);
 };
 
 // Debug pretty print of a slice of the memory state
