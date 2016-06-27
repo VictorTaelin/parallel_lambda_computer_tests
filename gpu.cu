@@ -6,10 +6,10 @@
 const int ints_per_node = 4;
 
 const int threads_per_block = 32;
-const int nodes_per_thread = 64;
-const int thread_ticks = 32;
-const int block_ticks = 32;
-const int kernel_calls = 2000;
+const int nodes_per_thread = 32;
+const int thread_ticks = 1;
+const int block_ticks = 16;
+const int kernel_calls = 1300;
 
 const int ints_per_thread = nodes_per_thread * ints_per_node;
 const int nodes_per_block = nodes_per_thread * threads_per_block;
@@ -26,7 +26,8 @@ __global__ void process(int *mem, int phase){
     int smem_idx = thread_local_num * ints_per_thread;
     int mem_idx = thread_global_num * ints_per_thread + offset;
 
-    // printf("KERNEL | local = %d/%d, global = %d | mem from %d til %d, smem from %d til %d, smem_size = %d\n", 
+    // printf("KERNEL ph:%d | local = %d/%d, global = %d | mem from %d til %d, smem from %d til %d, smem_size = %d\n", 
+        // phase,
         // thread_local_num, 
         // blockDim.x, 
         // thread_global_num,
@@ -45,6 +46,7 @@ __global__ void process(int *mem, int phase){
     // Calls the kernel
     for (int u = 0, ph = 0; u < block_ticks; ++u, ph = !ph){
         int local_offset = ph ? ints_per_thread/2 : 0;
+        // int local_offset = 0;
         for (int t = 0; t<thread_ticks; ++t){ // Many ticks on thread's space
             if (ph == 0 || threadIdx.x < blockDim.x-1) {
                 // printf("TICK %d %d | mem from %d til %d, smem from %d til %d\n", 
@@ -56,8 +58,8 @@ __global__ void process(int *mem, int phase){
                     // smem_idx+local_offset+ints_per_thread);
                 tick(smem + smem_idx + local_offset, nodes_per_thread);
             };
+            __syncthreads();
         };
-        __syncthreads();
     };
 
     // Writes to global mamory
@@ -85,12 +87,14 @@ int main(){
     double t = now();
     for (int k=0; k<kernel_calls; ++k){
         process<<<grid_size_0, block_size>>>(device_memory, 0);
-        process<<<grid_size_0, block_size>>>(device_memory, 1);
+        process<<<grid_size_1, block_size>>>(device_memory, 1);
+
+        // cudaMemcpy(memory, device_memory, memory_size, cudaMemcpyDeviceToHost);
+        // print(memory, memory_nodes);
     };
     printf("%f\n", now()-t);
 
     cudaMemcpy(memory, device_memory, memory_size, cudaMemcpyDeviceToHost);
-    cudaFree(device_memory);
-
     print(memory, 40);
+    cudaFree(device_memory);
 }

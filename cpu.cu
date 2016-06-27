@@ -15,8 +15,10 @@ int main(){
     double t = now();
 
     // Calls rewrite sequentially until the computation is done
-    for (int k=0; k<clocks; ++k)
+    for (int k=0; k<clocks; ++k){
         tick(memory, memory_nodes);
+        // print(memory, memory_nodes);
+    }
 
     // Print the result (should have only 4 numbers)
     print(memory, 40);
